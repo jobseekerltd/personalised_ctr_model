@@ -1,0 +1,34 @@
+FROM continuumio/anaconda3
+
+RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
+    apt-get install -y git-lfs && \
+    git lfs install
+
+RUN apt-get update \
+    && apt-get install -y make unzip g++ git curl libc-dev libgomp1 libqt4-dev
+
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main 9.4" > /etc/apt/sources.list.d/pgdg.list
+RUN apt-get install -y postgresql-9.4 postgresql-client-9.4 libpq-dev python-psycopg2
+
+RUN pip install --upgrade pip
+RUN conda install -y jupyter flask boto3 scikit-learn tornado gcc
+RUN conda install -c conda-forge jupyter_contrib_nbextensions
+RUN jupyter contrib nbextension install
+RUN jupyter nbextension enable codefolding/main
+
+RUN pip install xgboost fuzzywuzzy seaborn gensim jupyter_contrib_nbextensions unidecode \
+    psycopg2 \
+    eli5 watermark imbalanced-learn dill FileChunkIO
+
+#pip from github
+ADD docker/ssh.sh /usr/bin
+RUN /usr/bin/ssh.sh
+RUN mkdir /code
+ADD requirements.txt /code
+RUN pip install -r /code/requirements.txt
+
+RUN mkdir -p ~/.jupyter/custom/
+RUN echo '.container { width:95% !important; }' > ~/.jupyter/custom/custom.css
+
+WORKDIR /code
+
